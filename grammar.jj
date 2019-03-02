@@ -1,0 +1,130 @@
+options {
+    LOOKAHEAD = 2;
+    FORCE_LA_CHECK = true;
+}
+
+PARSER_BEGIN(EtuTVLParser)
+
+public class EtuTVLParser {
+
+    public static void main(String[] args) throws Exception
+    {
+        EtuTVLParser p;
+        p = new EtuTVLParser(new java.io.FileReader(args[0]));
+        try {
+            p.parse();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+PARSER_END(EtuTVLParser)
+
+SKIP : { " " | "\t" | "\n" | "\r"}
+SKIP : { <"--" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>}
+
+TOKEN : {
+    <LEFT_BRACE: "("> |
+    <RIGHT_BRACE: ")"> |
+    <NOT: "NOT"> |
+    <AND: "AND"> |
+    <OR: "OR">
+}
+
+TOKEN : {
+    <PROGRAM: "PROGRAM"> |
+    <DECL_SECT: "DECLARATION SECTION"> |
+    <INIT_SECT: "INITIALIZATION SECTION"> |
+    <MAIN_SECT: "MAIN SECTION"> |
+    <BOOL_LITERAL: ("TRUE" | "FALSE" | "UNKNOWN")> |
+    <SEMICOLON: ";"> |
+    <DELIMITER: ","> |
+    <ASSIGN: "="> |
+    <INPUT: "INPUT"> |
+    <OUTPUT: "OUTPUT">
+}
+
+TOKEN : {
+    <ID: (["a"-"z", "A"-"Z"])(["a"-"z", "A"-"Z", "0"-"9"])*>
+}
+
+void parse(): {}
+{
+    <PROGRAM> <ID> <SEMICOLON>
+    dectsect() initsect() mainsect()
+    <EOF>
+}
+
+void dectsect(): {}
+{
+    <DECL_SECT> vname_list() <SEMICOLON>
+}
+
+void initsect(): {}
+{
+    <INIT_SECT> (init_list() <SEMICOLON>)+
+}
+
+void mainsect(): {}
+{
+    <MAIN_SECT> (statement() <SEMICOLON>)*
+}
+
+void vname_list(): {}
+{
+    <ID> (<DELIMITER> <ID>)*
+}
+
+void init_list(): {}
+{
+    <ID> <ASSIGN> logical_value()
+}
+
+void logical_value(): {}
+{
+    <BOOL_LITERAL>
+}
+
+void statement() : {}
+{
+    input_stmt() | output_stmt() | bool_assign_stmt()
+}
+
+void input_stmt() : {}
+{
+    <INPUT> "\'""\'" <ID>
+}
+
+void output_stmt() : {}
+{
+    <OUTPUT> ("\'"(<ID>)*"\'")* bool_expr()
+}
+
+void bool_assign_stmt() : {}
+{
+    <ID> <ASSIGN> bool_expr()
+}
+
+void bool_expr() : {}
+{
+    bool_term() ("OR" bool_term())*
+}
+
+void bool_term() : {}
+{
+    bool_factor() ("AND" bool_factor())*
+}
+
+void bool_factor() : {}
+{
+    bool_primary() | "NOT" bool_primary()
+}
+
+void bool_primary() : {}
+{
+    <BOOL_LITERAL> | <ID> | "(" bool_expr() ")"
+}
+
+
+
+
